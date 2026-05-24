@@ -81,58 +81,43 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
     setStatus('Saved');
   }, [hackathon.plan]);
 
-  useEffect(() => {
-    if (!sessionToken) return;
-
-    const serializedPayload = JSON.stringify(payload);
-
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      lastSavedRef.current = serializedPayload;
-      return;
-    }
-
-    if (serializedPayload === lastSavedRef.current) {
+  const savePlan = async () => {
+    if (!sessionToken) {
+      setStatus('No auth');
       return;
     }
 
     setStatus('Saving…');
-    window.clearTimeout(timerRef.current);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/hackathons/${hackathon.id}/plan`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    timerRef.current = window.setTimeout(async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/hackathons/${hackathon.id}/plan`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sessionToken}`
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          throw new Error(await res.text());
-        }
-
-        const saved = await res.json();
-        lastSavedRef.current = serializedPayload;
-        setStatus('Saved');
-
-        // Update local states with any normalized values from server
-        setIdeaDone(!!saved.idea_done);
-        setImplementationDone(!!saved.implementation_done);
-        setDemoDone(!!saved.demo_done);
-        setSubmitted(!!saved.submitted);
-
-        // Optional local callback only, but parent should not refetch the whole dashboard here.
-        onSaved?.(saved);
-      } catch {
-        setStatus('Save failed');
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
-    }, 1000);
 
-    return () => window.clearTimeout(timerRef.current);
-  }, [payload, hackathon.id, sessionToken, onSaved]);
+      const saved = await res.json();
+      lastSavedRef.current = JSON.stringify(payload);
+      setStatus('Saved');
+
+      setIdeaDone(!!saved.idea_done);
+      setImplementationDone(!!saved.implementation_done);
+      setDemoDone(!!saved.demo_done);
+      setSubmitted(!!saved.submitted);
+
+      onSaved?.(saved);
+    } catch (e) {
+      console.error('Save failed', e);
+      setStatus('Save failed');
+    }
+  };
+
 
   return (
     <div className="space-y-3">
@@ -232,6 +217,17 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="pt-3">
+        <button
+          type="button"
+          onClick={savePlan}
+          disabled={!editing || status === 'Saving…'}
+          className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {status === 'Saving…' ? 'Saving…' : 'Save'}
+        </button>
       </div>
     </div>
   );
