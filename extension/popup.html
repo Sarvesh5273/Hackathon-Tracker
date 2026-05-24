@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HackOS Tracker</title>
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --panel: #111111;
+        --text: #e0e0e0;
+        --muted: #9aa0a6;
+        --border: #222222;
+        --accent: #7c4dff;
+        --good: #27c93f;
+        --bad: #ff5f56;
+      }
+      body {
+        margin: 0;
+        width: 360px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 12px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #0f0f0f, #0a0a0a);
+      }
+      .title {
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.2px;
+      }
+      .icon-btn {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+        padding: 6px 8px;
+        border-radius: 10px;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .container {
+        padding: 12px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 6px;
+      }
+      input, select {
+        width: 100%;
+        box-sizing: border-box;
+        background: #0c0c0c;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 13px;
+        outline: none;
+      }
+      .btn {
+        cursor: pointer;
+        width: 100%;
+        margin-top: 12px;
+        border: 1px solid var(--border);
+        background: #151515;
+        color: var(--text);
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: rgba(255,255,255,0.08);
+        color: white;
+      }
+      .btn.secondary {
+        background: #151515;
+      }
+      .msg {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .msg.good { color: var(--good); }
+      .msg.bad { color: var(--bad); }
+      .hidden { display: none; }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      a {
+        color: var(--text);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--muted);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #0c0c0c;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .check {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--border);
+      }
+      .check.ok { background: var(--good); }
+      .check.bad { background: var(--bad); }
+      .small {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .date-group-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 10px 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .toast {
+        position: fixed;
+        top: 56px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #0f0f0f;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        z-index: 999;
+        font-size: 12px;
+      }
+      .toast-link { cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title">HackOS Tracker</div>
+      <button id="gearBtn" class="icon-btn" title="Settings">⚙</button>
+    </header>
+
+    <div id="toast" class="toast hidden">
+      <span id="toastText">Added to HackOS</span>
+      <a id="toastLink" class="toast-link" href="#">View in Dashboard</a>
+    </div>
+
+    <div class="container">
+      <div id="viewLoading" class="panel">
+        <div style="font-weight: 700;">Extracting hackathon info...</div>
+        <div class="msg">This may take a few seconds.</div>
+      </div>
+
+      <div id="viewSettings" class="panel hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="font-weight:700;">Settings</div>
+          <span class="pill"><span id="tokenDot" class="check"></span><span id="tokenStatus">Token not set</span></span>
+        </div>
+
+        <label for="tokenInput">Extension Token</label>
+        <input id="tokenInput" type="password" placeholder="Paste token from dashboard" />
+        <div class="small">Tip: Get this token from the web dashboard, then paste it here.</div>
+
+        <button id="saveTokenBtn" class="btn primary">Save & Validate</button>
+        <div id="settingsMsg" class="msg"></div>
+
+        <button id="backBtn" class="btn secondary">Back</button>
+      </div>
+
+      <!-- ─── RESULT VIEW ─────────────────────────────────────── -->
+      <div id="viewResult" class="panel hidden">
+        <div style="font-weight:700;">Extraction Result</div>
+
+        <label for="nameInput">Name</label>
+        <input id="nameInput" type="text" />
+
+        <label for="urlInput">URL</label>
+        <input id="urlInput" type="text" readonly />
+
+        <!-- Registration dates -->
+        <div class="date-group-label">Registration</div>
+        <div class="row">
+          <div style="flex: 1;">
+            <label for="regOpenInput">Opens</label>
+            <input id="regOpenInput" type="date" />
+          </div>
+          <div style="flex: 1;">
+            <label for="regDeadlineInput">Deadline</label>
+            <input id="regDeadlineInput" type="date" />
+          </div>
+        </div>
+
+        <!-- Submission dates -->
+        <div class="date-group-label">Submission</div>
+        <div class="row">
+          <div style="flex: 1;">
+            <label for="subOpenInput">Opens</label>
+            <input id="subOpenInput" type="date" />
+          </div>
+          <div style="flex: 1;">
+            <label for="deadlineInput">Deadline *</label>
+            <input id="deadlineInput" type="date" />
+          </div>
+        </div>
+
+        <!-- Mode + Location -->
+        <div class="row" style="margin-top:10px;">
+          <div style="flex: 1;">
+            <label for="modeInput">Mode</label>
+            <select id="modeInput">
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="Offline">Offline</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="locationInput">Location</label>
+            <input id="locationInput" type="text" />
+          </div>
+        </div>
+
+        <button id="addBtn" class="btn primary">Add to My Hackathons</button>
+        <div id="resultMsg" class="msg"></div>
+
+        <button id="retryBtn" class="btn secondary">Retry Extraction</button>
+      </div>
+
+      <!-- ─── MANUAL VIEW ─────────────────────────────────────── -->
+      <div id="viewManual" class="panel hidden">
+        <div style="font-weight:700;">Extraction failed</div>
+        <div id="manualHint" class="msg bad">You can add it manually.</div>
+
+        <label for="mNameInput">Name</label>
+        <input id="mNameInput" type="text" placeholder="Hackathon name" />
+
+        <label for="mUrlInput">URL</label>
+        <input id="mUrlInput" type="text" placeholder="https://..." />
+
+        <!-- Registration dates -->
+        <div class="date-group-label">Registration</div>
+        <div class="row">
+          <div style="flex: 1;">
+            <label for="mRegOpenInput">Opens</label>
+            <input id="mRegOpenInput" type="date" />
+          </div>
+          <div style="flex: 1;">
+            <label for="mRegDeadlineInput">Deadline</label>
+            <input id="mRegDeadlineInput" type="date" />
+          </div>
+        </div>
+
+        <!-- Submission dates -->
+        <div class="date-group-label">Submission</div>
+        <div class="row">
+          <div style="flex: 1;">
+            <label for="mSubOpenInput">Opens</label>
+            <input id="mSubOpenInput" type="date" />
+          </div>
+          <div style="flex: 1;">
+            <label for="mDeadlineInput">Deadline *</label>
+            <input id="mDeadlineInput" type="date" />
+          </div>
+        </div>
+
+        <!-- Mode + Location -->
+        <div class="row" style="margin-top:10px;">
+          <div style="flex: 1;">
+            <label for="mModeInput">Mode</label>
+            <select id="mModeInput">
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="Offline">Offline</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="mLocationInput">Location</label>
+            <input id="mLocationInput" type="text" value="Online" />
+          </div>
+        </div>
+
+        <button id="manualAddBtn" class="btn primary">Add to My Hackathons</button>
+        <div id="manualMsg" class="msg"></div>
+
+        <button id="manualRetryBtn" class="btn secondary">Retry Extraction</button>
+      </div>
+    </div>
+
+    <footer>
+      <span id="footerLeft">Ready</span>
+      <a id="dashboardLink" href="#">Open Dashboard →</a>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

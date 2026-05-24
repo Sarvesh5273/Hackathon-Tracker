@@ -1,0 +1,230 @@
+HACKATHON TRACKER API - QUICK REFERENCE
+════════════════════════════════════════════════════════════════
+
+BASE URL: http://localhost:8000
+
+ENDPOINTS
+════════════════════════════════════════════════════════════════
+
+1. Extract Hackathon Details (No Auth Required)
+   POST /api/extract
+   Body: {url: string, title: string, page_text?: string}
+   Response: {name, registration_deadline, submission_deadline, location, mode, description}
+
+2. Create Hackathon (Auth Required: JWT or Extension Token)
+   POST /api/hackathons
+   Body: {name, url, registration_deadline?, submission_deadline?, location, mode, description, status?}
+   Response: {id, user_id, ...} with timestamps
+
+3. Get User's Hackathons (Auth Required)
+   GET /api/hackathons
+   Response: [{id, name, url, ...}] ordered by submission_deadline
+
+4. Create/Update Plan (Auth Required)
+   PUT /api/hackathons/{id}/plan
+   Body: {project_idea, tech_stack[], team_members[], notes?, priority?}
+   Response: {id, hackathon_id, ...} with timestamps
+
+5. Delete Hackathon (Auth Required)
+   DELETE /api/hackathons/{id}
+   Response: {message: "Hackathon deleted successfully"}
+
+6. Generate Extension Token (JWT Only)
+   POST /api/auth/extension-token
+   Response: {token: string}
+
+7. Health Check (No Auth Required)
+   GET /health
+   Response: {status: "ok"}
+
+AUTHENTICATION
+════════════════════════════════════════════════════════════════
+
+JWT Method:
+  Header: Authorization: Bearer <jwt_token>
+
+Extension Token Method:
+  Header: X-Extension-Token: <token>
+
+STATUS VALUES
+════════════════════════════════════════════════════════════════
+
+Hackathon Status:
+  • interested    (default)
+  • registered
+  • completed
+  • dropped
+
+Hackathon Mode:
+  • Online
+  • Hybrid
+  • Offline
+
+ERROR RESPONSES
+════════════════════════════════════════════════════════════════
+
+401 Unauthorized
+  • Missing authentication
+  • Invalid JWT token
+  • Invalid extension token
+
+404 Not Found
+  • Hackathon not found
+  • Access denied
+
+500 Server Error
+  • Database error
+  • Extraction error
+  • Crawling error
+
+CURL EXAMPLES
+════════════════════════════════════════════════════════════════
+
+Test Health:
+  curl http://localhost:8000/health
+
+Extract Hackathon:
+  curl -X POST http://localhost:8000/api/extract \
+    -H "Content-Type: application/json" \
+    -d '{"url": "https://hackathon.com", "title": "HackName"}'
+
+Create Hackathon (with JWT):
+  curl -X POST http://localhost:8000/api/hackathons \
+    -H "Authorization: Bearer YOUR_JWT" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "HackName",
+      "url": "https://hackathon.com",
+      "location": "Online",
+      "mode": "Online",
+      "description": "Cool hackathon"
+    }'
+
+Get Hackathons (with JWT):
+  curl http://localhost:8000/api/hackathons \
+    -H "Authorization: Bearer YOUR_JWT"
+
+Generate Extension Token (with JWT):
+  curl -X POST http://localhost:8000/api/auth/extension-token \
+    -H "Authorization: Bearer YOUR_JWT"
+
+Get Hackathons (with Extension Token):
+  curl http://localhost:8000/api/hackathons \
+    -H "X-Extension-Token: YOUR_TOKEN"
+
+CORS ALLOWED ORIGINS
+════════════════════════════════════════════════════════════════
+
+• chrome-extension://*
+• http://localhost:5173
+• http://localhost:3000
+
+PYDANTIC VALIDATION
+════════════════════════════════════════════════════════════════
+
+✓ name: string (required)
+✓ url: string (required)
+✓ location: string (required)
+✓ mode: string - must be Online|Hybrid|Offline
+✓ description: string - max 200 characters
+✓ registration_deadline: ISO string or null
+✓ submission_deadline: ISO string or null
+✓ status: string - must be interested|registered|completed|dropped
+✓ project_idea: string (required for plans)
+✓ tech_stack: string[] (required for plans)
+✓ team_members: string[] (required for plans)
+
+DATABASE
+════════════════════════════════════════════════════════════════
+
+Tables:
+  • hackathons   (user-specific hackathon entries)
+  • plans        (project plans for hackathons)
+  • user_tokens  (extension tokens)
+
+Indexes:
+  • user_id      (fast user queries)
+  • deadline     (sorting by submission deadline)
+  • token        (fast token lookups)
+
+SETUP CHECKLIST
+════════════════════════════════════════════════════════════════
+
+□ Python 3.11+ installed
+□ Virtual environment created
+□ Dependencies installed: pip install -r requirements.txt
+□ .env configured with credentials
+□ Database tables created in Supabase
+□ Server running: python main.py
+□ API accessible at http://localhost:8000
+□ Swagger UI visible at http://localhost:8000/docs
+
+DEBUGGING
+════════════════════════════════════════════════════════════════
+
+Check server is running:
+  curl http://localhost:8000/health
+
+Check Python syntax:
+  python3 -m py_compile main.py schemas.py
+
+View detailed API docs:
+  http://localhost:8000/docs (Swagger)
+  http://localhost:8000/redoc (ReDoc)
+
+View dependencies:
+  pip list | grep -E "fastapi|pydantic|supabase|google"
+
+Test extract:
+  curl -X POST http://localhost:8000/api/extract \
+    -H "Content-Type: application/json" \
+    -d '{"url": "https://example.com", "title": "Test"}'
+
+COMMON ISSUES
+════════════════════════════════════════════════════════════════
+
+Issue: 401 Unauthorized
+Solution: Check JWT/token is valid, token not expired
+
+Issue: CORS error
+Solution: Check request origin in allowed_origins list
+
+Issue: Database error
+Solution: Verify .env credentials, check Supabase is running
+
+Issue: No response from Crawl4AI
+Solution: Check internet connection, URL is accessible
+
+Issue: Gemini extraction fails
+Solution: Verify GEMINI_API_KEY, check API quota
+
+USEFUL COMMANDS
+════════════════════════════════════════════════════════════════
+
+Start server:
+  python main.py
+
+Run tests:
+  python test_api.py
+
+View logs:
+  tail -f app.log
+
+Stop server:
+  Ctrl+C
+
+Restart virtual environment:
+  source venv/bin/activate
+
+Install all dependencies:
+  pip install -r requirements.txt
+
+Update dependencies:
+  pip install --upgrade -r requirements.txt
+
+════════════════════════════════════════════════════════════════
+For more help, see:
+  • README.md - Complete guide
+  • QUICK_START.md - Setup instructions
+  • API_DOCUMENTATION.md - Detailed endpoints
+  • INTEGRATION_GUIDE.md - Frontend examples
