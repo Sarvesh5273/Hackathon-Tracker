@@ -60,6 +60,10 @@ class PlanRequest(BaseModel):
     team_members: List[str] = Field(default_factory=list)
     notes: Optional[str] = None
     priority: Optional[str] = "medium"
+    idea_done: bool = False
+    implementation_done: bool = False
+    demo_done: bool = False
+    submitted: bool = False
 
 
 class PlanResponse(BaseModel):
@@ -72,6 +76,10 @@ class PlanResponse(BaseModel):
     team_members: List[str] = Field(default_factory=list)
     notes: Optional[str] = None
     priority: Optional[str] = None
+    idea_done: bool = False
+    implementation_done: bool = False
+    demo_done: bool = False
+    submitted: bool = False
     created_at: str
     updated_at: str
 

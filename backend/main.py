@@ -449,6 +449,10 @@ async def upsert_plan(
                     "team_members": plan.team_members,
                     "notes": plan.notes,
                     "priority": plan.priority,
+                    "idea_done": getattr(plan, 'idea_done', False),
+                    "implementation_done": getattr(plan, 'implementation_done', False),
+                    "demo_done": getattr(plan, 'demo_done', False),
+                    "submitted": getattr(plan, 'submitted', False),
                 },
                 on_conflict="hackathon_id",
             )
