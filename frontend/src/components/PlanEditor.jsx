@@ -14,7 +14,15 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
   const [teamMembersText, setTeamMembersText] = useState((hackathon.plan?.team_members || []).join(', '));
   const [notes, setNotes] = useState(hackathon.plan?.notes || '');
   const [priority, setPriority] = useState(hackathon.plan?.priority || 'medium');
+
+  // progress flags
+  const [ideaDone, setIdeaDone] = useState(!!hackathon.plan?.idea_done);
+  const [implementationDone, setImplementationDone] = useState(!!hackathon.plan?.implementation_done);
+  const [demoDone, setDemoDone] = useState(!!hackathon.plan?.demo_done);
+  const [submitted, setSubmitted] = useState(!!hackathon.plan?.submitted);
+
   const [status, setStatus] = useState('Saved');
+  const [editing, setEditing] = useState(false);
 
   const timerRef = useRef(null);
   const hasMountedRef = useRef(false);
@@ -26,9 +34,13 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
       tech_stack: splitTags(techStackText),
       team_members: splitTags(teamMembersText),
       notes,
-      priority
+      priority,
+      idea_done: ideaDone,
+      implementation_done: implementationDone,
+      demo_done: demoDone,
+      submitted: submitted,
     }),
-    [projectIdea, techStackText, teamMembersText, notes, priority]
+    [projectIdea, techStackText, teamMembersText, notes, priority, ideaDone, implementationDone, demoDone, submitted]
   );
 
   useEffect(() => {
@@ -37,7 +49,11 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
       tech_stack: hackathon.plan?.tech_stack || [],
       team_members: hackathon.plan?.team_members || [],
       notes: hackathon.plan?.notes || '',
-      priority: hackathon.plan?.priority || 'medium'
+      priority: hackathon.plan?.priority || 'medium',
+      idea_done: !!hackathon.plan?.idea_done,
+      implementation_done: !!hackathon.plan?.implementation_done,
+      demo_done: !!hackathon.plan?.demo_done,
+      submitted: !!hackathon.plan?.submitted,
     };
 
     const incomingSerialized = JSON.stringify(incoming);
@@ -55,6 +71,10 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
       setTeamMembersText(incoming.team_members.join(', '));
       setNotes(incoming.notes);
       setPriority(incoming.priority);
+      setIdeaDone(!!incoming.idea_done);
+      setImplementationDone(!!incoming.implementation_done);
+      setDemoDone(!!incoming.demo_done);
+      setSubmitted(!!incoming.submitted);
     }
 
     lastSavedRef.current = incomingSerialized;
@@ -94,11 +114,18 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           throw new Error(await res.text());
         }
 
+        const saved = await res.json();
         lastSavedRef.current = serializedPayload;
         setStatus('Saved');
 
+        // Update local states with any normalized values from server
+        setIdeaDone(!!saved.idea_done);
+        setImplementationDone(!!saved.implementation_done);
+        setDemoDone(!!saved.demo_done);
+        setSubmitted(!!saved.submitted);
+
         // Optional local callback only, but parent should not refetch the whole dashboard here.
-        onSaved?.(payload);
+        onSaved?.(saved);
       } catch {
         setStatus('Save failed');
       }
@@ -111,7 +138,14 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-primaryText">Plan Editor</div>
-        <div className="text-xs text-secondaryText">{status}</div>
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-secondaryText">{status}</div>
+          {!editing ? (
+            <button type="button" onClick={() => setEditing(true)} className="text-sm text-secondaryText">✎ Edit</button>
+          ) : (
+            <button type="button" onClick={() => setEditing(false)} className="text-sm text-secondaryText">Done</button>
+          )}
+        </div>
       </div>
 
       <div>
@@ -122,6 +156,7 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           value={projectIdea}
           onChange={(e) => setProjectIdea(e.target.value)}
           placeholder="Build something awesome…"
+          disabled={!editing}
         />
       </div>
 
@@ -132,6 +167,7 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           value={techStackText}
           onChange={(e) => setTechStackText(e.target.value)}
           placeholder="React, FastAPI, Supabase"
+          disabled={!editing}
         />
       </div>
 
@@ -142,6 +178,7 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           value={teamMembersText}
           onChange={(e) => setTeamMembersText(e.target.value)}
           placeholder="Ava, Sam, Jordan"
+          disabled={!editing}
         />
       </div>
 
@@ -153,7 +190,30 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Any extra notes…"
+          disabled={!editing}
         />
+      </div>
+
+      <div>
+        <div className="mb-1 block text-xs text-secondaryText">Progress</div>
+        <div className="flex flex-col gap-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={ideaDone} onChange={(e) => setIdeaDone(e.target.checked)} disabled={!editing} />
+            <span>Idea finalised</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={implementationDone} onChange={(e) => setImplementationDone(e.target.checked)} disabled={!editing} />
+            <span>Implementation completed</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={demoDone} onChange={(e) => setDemoDone(e.target.checked)} disabled={!editing} />
+            <span>Demo / Video ready</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={submitted} onChange={(e) => setSubmitted(e.target.checked)} disabled={!editing} />
+            <span>Submission submitted</span>
+          </label>
+        </div>
       </div>
 
       <div>
@@ -166,6 +226,7 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
                 name={`priority-${hackathon.id}`}
                 checked={priority === p}
                 onChange={() => setPriority(p)}
+                disabled={!editing}
               />
               <span className="capitalize">{p}</span>
             </label>
