@@ -31,7 +31,7 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
   const urgency = useMemo(() => getUrgency(current.submission_deadline), [current.submission_deadline]);
   const phase = useMemo(() => getHackathonPhase(current), [current]);
 
-  const isSubmitted = plan?.submitted === true;
+  const isSubmitted = current.plan?.submitted === true;
 
   // Derive plan-based status if available
   const plan = current.plan || null;
