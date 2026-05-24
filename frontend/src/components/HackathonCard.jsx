@@ -37,8 +37,11 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
 
   return (
     <>
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setModalOpen(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setModalOpen(true); }}
         className={`w-full text-left rounded-2xl border bg-card shadow-terminal transition hover:-translate-y-0.5 hover:border-white/10 p-4 ${urgency.tone === 'red' ? 'border-urgencyRed/40' : urgency.tone === 'amber' ? 'border-urgencyAmber/40' : 'border-border'}`}
       >
         <div className="flex items-start justify-between gap-3">
@@ -101,7 +104,7 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
             </div>
           )}
         </div>
-      </button>
+      </div>
 
       {modalOpen && (
         <HackathonModal
