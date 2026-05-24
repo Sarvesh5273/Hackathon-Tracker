@@ -115,7 +115,7 @@ export default function HackathonModal({ hackathon, sessionToken, onClose, onSav
 
             {/* Plan Editor */}
             <div className="border-t border-white/10 pt-4">
-              <PlanEditor hackathon={hackathon} sessionToken={sessionToken} onSaved={onSaved} />
+              <PlanEditor hackathon={hackathon} sessionToken={sessionToken} onSaved={(saved) => { onSaved?.(saved); /* also trigger a parent refresh if provided via prop */ }} />
             </div>
 
             {/* Delete Button */}

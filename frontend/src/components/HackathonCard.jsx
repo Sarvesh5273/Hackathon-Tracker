@@ -31,6 +31,8 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
   const urgency = useMemo(() => getUrgency(current.submission_deadline), [current.submission_deadline]);
   const phase = useMemo(() => getHackathonPhase(current), [current]);
 
+  const isSubmitted = plan?.submitted === true;
+
   // Derive plan-based status if available
   const plan = current.plan || null;
   const derivedStatus = plan
@@ -75,7 +77,7 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
             <span className={`rounded-full border px-2 py-1 text-[11px] ${derivedStatusClass}`}>
               {derivedStatus}
             </span>
-            <CountdownTimer deadlineIso={current.submission_deadline} />
+            {!isSubmitted && <CountdownTimer deadlineIso={current.submission_deadline} />}
           </div>
         </div>
 
@@ -93,9 +95,12 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
             {priority.charAt(0).toUpperCase() + priority.slice(1)}
           </span>
 
-          <span className={`rounded-full border px-2 py-1 text-xs ${badgeClass(urgency.tone)}`}>
-            {urgency.label}
-          </span>
+          {!isSubmitted && (
+            <span className={`rounded-full border px-2 py-1 text-xs ${badgeClass(urgency.tone)}`}>
+              {urgency.label}
+            </span>
+          )}
+
           {current.mode ? (
             <span className="rounded-full border border-border bg-black/20 px-2 py-1 text-xs text-secondaryText">
               {current.mode}
