@@ -21,10 +21,29 @@ function phaseBadgeClass(phase) {
 }
 
 
-export default function HackathonCard({ hackathon, sessionToken, onSaved }) {
+export default function HackathonCard({ hackathon, sessionToken, onSaved, onDelete }) {
   const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const urgency = useMemo(() => getUrgency(hackathon.submission_deadline), [hackathon.submission_deadline]);
   const phase = useMemo(() => getHackathonPhase(hackathon), [hackathon]);
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${hackathon.name}"?`)) return;
+    
+    setDeleting(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/hackathons/${hackathon.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${sessionToken}` }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      onDelete?.();
+    } catch (e) {
+      alert(`Delete failed: ${e.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
 
   const statusTone = {
@@ -107,6 +126,13 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved }) {
       {open ? (
         <div className="border-t border-border p-4 pt-3">
           <PlanEditor hackathon={hackathon} sessionToken={sessionToken} onSaved={onSaved} />
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="mt-4 w-full rounded-lg border border-urgencyRed/40 bg-urgencyRed/10 px-3 py-2 text-sm font-semibold text-urgencyRed hover:bg-urgencyRed/20 disabled:opacity-50"
+          >
+            {deleting ? 'Deleting…' : 'Delete Hackathon'}
+          </button>
         </div>
       ) : null}
     </div>

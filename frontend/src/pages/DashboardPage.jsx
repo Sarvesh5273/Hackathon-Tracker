@@ -171,6 +171,7 @@ export default function DashboardPage() {
                 key={h.id}
                 hackathon={h}
                 sessionToken={token}
+                onDelete={() => fetchHackathons({ silent: true })}
               />
             ))}
           </div>
