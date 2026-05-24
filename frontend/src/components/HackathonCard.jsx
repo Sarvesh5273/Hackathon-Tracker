@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import CountdownTimer from './CountdownTimer';
-import PlanEditor from './PlanEditor';
+import HackathonModal from './HackathonModal';
 import { getUrgency, getHackathonPhase, formatDateShort } from '../lib/date';
 
 
@@ -22,28 +22,9 @@ function phaseBadgeClass(phase) {
 
 
 export default function HackathonCard({ hackathon, sessionToken, onSaved, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const urgency = useMemo(() => getUrgency(hackathon.submission_deadline), [hackathon.submission_deadline]);
   const phase = useMemo(() => getHackathonPhase(hackathon), [hackathon]);
-
-  const handleDelete = async () => {
-    if (!window.confirm(`Delete "${hackathon.name}"?`)) return;
-    
-    setDeleting(true);
-    try {
-      const res = await fetch(`http://localhost:8000/api/hackathons/${hackathon.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${sessionToken}` }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      onDelete?.();
-    } catch (e) {
-      alert(`Delete failed: ${e.message}`);
-    } finally {
-      setDeleting(false);
-    }
-  };
 
 
   const statusTone = {
@@ -55,10 +36,11 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
 
 
   return (
-    <div
-      className={`rounded-2xl border bg-card shadow-terminal transition hover:-translate-y-0.5 hover:border-white/10 ${urgency.tone === 'red' ? 'border-urgencyRed/40' : urgency.tone === 'amber' ? 'border-urgencyAmber/40' : 'border-border'}`}
-    >
-      <button className="w-full text-left p-4" onClick={() => setOpen((v) => !v)}>
+    <>
+      <button
+        onClick={() => setModalOpen(true)}
+        className={`w-full text-left rounded-2xl border bg-card shadow-terminal transition hover:-translate-y-0.5 hover:border-white/10 p-4 ${urgency.tone === 'red' ? 'border-urgencyRed/40' : urgency.tone === 'amber' ? 'border-urgencyAmber/40' : 'border-border'}`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="font-semibold text-lg truncate">{hackathon.name}</h3>
@@ -119,22 +101,17 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
             </div>
           )}
         </div>
-
       </button>
 
-
-      {open ? (
-        <div className="border-t border-border p-4 pt-3">
-          <PlanEditor hackathon={hackathon} sessionToken={sessionToken} onSaved={onSaved} />
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="mt-4 w-full rounded-lg border border-urgencyRed/40 bg-urgencyRed/10 px-3 py-2 text-sm font-semibold text-urgencyRed hover:bg-urgencyRed/20 disabled:opacity-50"
-          >
-            {deleting ? 'Deleting…' : 'Delete Hackathon'}
-          </button>
-        </div>
-      ) : null}
-    </div>
+      {modalOpen && (
+        <HackathonModal
+          hackathon={hackathon}
+          sessionToken={sessionToken}
+          onClose={() => setModalOpen(false)}
+          onSaved={onSaved}
+          onDelete={onDelete}
+        />
+      )}
+    </>
   );
 }
