@@ -72,7 +72,7 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
             <p className="text-xs text-secondaryText truncate mt-1">{current.url}</p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <span className={`rounded-full border px-2 py-1 text-[11px] ${statusTone}`}>
+            <span className={`rounded-full border px-2 py-1 text-[11px] ${derivedStatusClass}`}>
               {derivedStatus}
             </span>
             <CountdownTimer deadlineIso={current.submission_deadline} />
