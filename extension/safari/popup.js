@@ -366,6 +366,13 @@ async function wireUI() {
       renderFromLatestExtraction();
     }
   });
+
+  // Also listen for explicit runtime notifications (useful in Safari)
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg?.type === 'HACKOS_EXTRACTION_UPDATED') {
+      renderFromLatestExtraction();
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
