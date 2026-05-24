@@ -396,7 +396,30 @@ async def get_hackathons(
             .order("submission_deadline", desc=False)
             .execute()
         )
-        return response.data or []
+        hacks = response.data or []
+
+        if not hacks:
+            return []
+
+        # Fetch any plans for these hackathons so the frontend can render plan-derived status/priority
+        ids = [h.get("id") for h in hacks]
+        plans_resp = await (
+            supabase
+            .table("plans")
+            .select("*")
+            .in_("hackathon_id", ids)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        plans = plans_resp.data or []
+        plan_map = {p.get("hackathon_id"): p for p in plans}
+
+        for h in hacks:
+            p = plan_map.get(h.get("id"))
+            if p:
+                h["plan"] = p
+
+        return hacks
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch hackathons: {str(e)}")
 

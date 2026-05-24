@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import PlanEditor from './PlanEditor';
 import { formatDateShort } from '../lib/date';
 
+// Runtime flag to help detect whether modal code is loaded in the running build
+try { window.__HAS_HACKATHON_MODAL = true; } catch (e) {}
+
 export default function HackathonModal({ hackathon, sessionToken, onClose, onSaved, onDelete }) {
   const [deleting, setDeleting] = useState(false);
 
@@ -59,7 +62,15 @@ export default function HackathonModal({ hackathon, sessionToken, onClose, onSav
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-secondaryText opacity-50">Status</div>
-                <div className="mt-1 text-sm font-medium capitalize">{hackathon.status || 'interested'}</div>
+                <div className="mt-1 text-sm font-medium capitalize">
+                  {(() => {
+                    const plan = hackathon.plan || null;
+                    const derived = plan
+                      ? plan.submitted ? 'Submission done' : plan.demo_done ? 'Demo done' : plan.implementation_done ? 'Code done' : plan.idea_done ? 'Idea done' : (hackathon.status || 'interested')
+                      : (hackathon.status || 'interested');
+                    return derived;
+                  })()}
+                </div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-secondaryText opacity-50">Mode</div>
