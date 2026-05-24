@@ -49,8 +49,8 @@ class HackathonResponse(BaseModel):
     mode: str
     description: str = ""
     status: str
-    # optional embedded plan
-    plan: Optional[PlanResponse] = None
+    # optional embedded plan (forward reference)
+    plan: Optional['PlanResponse'] = None
     created_at: str
     updated_at: str
 
