@@ -27,12 +27,21 @@ export default function DashboardPage() {
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+  const isFetchingRef = React.useRef(false);
+  const lastFetchRef = React.useRef(0);
+
   const fetchHackathons = async (opts = {}) => {
     const silent = !!opts.silent;
     const minSpinnerMs = opts.minSpinnerMs || 0;
     const noStore = !!opts.noStore;
 
     if (!token) return;
+    const now = Date.now();
+    // avoid duplicate calls within 1s
+    if (isFetchingRef.current || now - lastFetchRef.current < 1000) return;
+
+    isFetchingRef.current = true;
+    lastFetchRef.current = now;
 
     const start = Date.now();
     if (!silent) setLoading(true);
@@ -55,6 +64,7 @@ export default function DashboardPage() {
       if (minSpinnerMs && elapsed < minSpinnerMs) await sleep(minSpinnerMs - elapsed);
       setLoading(false);
       setRefreshing(false);
+      isFetchingRef.current = false;
     }
   };
 
