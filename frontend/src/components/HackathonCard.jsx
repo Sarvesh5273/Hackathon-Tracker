@@ -37,15 +37,18 @@ export default function HackathonCard({ hackathon, sessionToken, onSaved, onDele
     ? plan.submitted ? 'Submission done' : plan.demo_done ? 'Demo done' : plan.implementation_done ? 'Code done' : plan.idea_done ? 'Idea done' : (current.status || 'interested')
     : (current.status || 'interested');
 
-  const statusTone = {
-    interested: 'border-border text-secondaryText bg-black/20',
-    registered: 'border-urgencyAmber/40 text-urgencyAmber bg-urgencyAmber/10',
-    completed: 'border-urgencyGreen/40 text-urgencyGreen bg-urgencyGreen/10',
-    dropped: 'border-urgencyRed/40 text-urgencyRed bg-urgencyRed/10'
-  }[current.status || 'interested'];
+  // Choose badge class based on derived plan status (colored per phase)
+  const derivedStatusClass = derivedStatus === 'Submission done' || derivedStatus === 'Submission submitted' ? 'border-urgencyGreen/40 text-urgencyGreen bg-urgencyGreen/10'
+    : derivedStatus === 'Demo done' ? 'border-urgencyGreen/40 text-urgencyGreen bg-urgencyGreen/10'
+    : derivedStatus === 'Code done' ? 'border-urgencyAmber/40 text-urgencyAmber bg-urgencyAmber/10'
+    : derivedStatus === 'Idea done' ? 'border-border text-secondaryText bg-black/20'
+    : current.status === 'registered' ? 'border-urgencyAmber/40 text-urgencyAmber bg-urgencyAmber/10'
+    : current.status === 'completed' ? 'border-urgencyGreen/40 text-urgencyGreen bg-urgencyGreen/10'
+    : 'border-border text-secondaryText bg-black/20';
 
   const priority = plan?.priority || current.priority || 'medium';
   const priorityClass = priority === 'high' ? 'border-urgencyRed/40 text-urgencyRed bg-urgencyRed/10' : priority === 'low' ? 'border-urgencyGreen/40 text-urgencyGreen bg-urgencyGreen/10' : 'border-amber-400 text-amber-600 bg-amber-100';
+
 
   const handlePlanSaved = (savedPlan) => {
     // savedPlan is the plan row returned by the API; merge into current
