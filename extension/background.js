@@ -5,6 +5,14 @@ function setLatestExtraction(payload) {
   return chrome.storage.local.set({ latestExtraction: payload });
 }
 
+function notifyPopup() {
+  try {
+    chrome.runtime.sendMessage({ type: 'HACKOS_EXTRACTION_UPDATED' });
+  } catch (e) {
+    // no-op
+  }
+}
+
 function getActiveTab() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -83,12 +91,14 @@ async function runExtractionFlow() {
     status: 'loading',
     startedAt: Date.now()
   });
+  notifyPopup();
 
   let tab;
   try {
     tab = await getActiveTab();
   } catch (e) {
     await setLatestExtraction({ status: 'error', errorType: 'TAB_ERROR', message: e.message });
+    notifyPopup();
     return;
   }
 
@@ -102,21 +112,29 @@ async function runExtractionFlow() {
       errorType: 'UNSUPPORTED_PAGE',
       message: 'This page cannot be accessed by the extension. Open a normal website tab and try again.'
     });
+    notifyPopup();
     return;
   }
 
-  try {
-    await executeContentScript(tab.id);
-  } catch (e) {
-    await setLatestExtraction({ status: 'error', errorType: 'INJECT_ERROR', message: e.message, url, title });
-    return;
-  }
-
+  // Try messaging the content script first; if it isn't present, inject and retry.
   let pageData;
   try {
-    pageData = await sendExtractMessage(tab.id);
+    try {
+      pageData = await sendExtractMessage(tab.id);
+    } catch (sendErr) {
+      // send failed — try injecting then retrying
+      try {
+        await executeContentScript(tab.id);
+        pageData = await sendExtractMessage(tab.id);
+      } catch (injectErr) {
+        // Prefer the injection error if present
+        const err = injectErr || sendErr;
+        throw err;
+      }
+    }
   } catch (e) {
     await setLatestExtraction({ status: 'error', errorType: 'CONTENT_ERROR', message: e.message, url, title });
+    notifyPopup();
     return;
   }
 
@@ -135,6 +153,7 @@ async function runExtractionFlow() {
       extracted,
       finishedAt: Date.now()
     });
+    notifyPopup();
   } catch (e) {
     const isNetwork = String(e.message || '').toLowerCase().includes('failed to fetch');
     await setLatestExtraction({
@@ -148,6 +167,7 @@ async function runExtractionFlow() {
         : e.message,
       finishedAt: Date.now()
     });
+    notifyPopup();
   }
 }
 
