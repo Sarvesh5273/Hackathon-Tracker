@@ -124,11 +124,22 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-primaryText">Plan Editor</div>
         <div className="flex items-center gap-3">
-          <div className="text-xs text-secondaryText">{status}</div>
           {!editing ? (
-            <button type="button" onClick={() => setEditing(true)} className="text-sm text-secondaryText">✎ Edit</button>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-sm px-2 py-1 rounded-md border border-white/10 bg-white/5 text-secondaryText hover:bg-white/10"
+            >
+              ✎ Edit
+            </button>
           ) : (
-            <button type="button" onClick={() => setEditing(false)} className="text-sm text-secondaryText">Done</button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-sm px-2 py-1 rounded-md border border-white/10 bg-white/5 text-secondaryText hover:bg-white/10"
+            >
+              Done
+            </button>
           )}
         </div>
       </div>
@@ -224,10 +235,11 @@ export default function PlanEditor({ hackathon, sessionToken, onSaved }) {
           type="button"
           onClick={savePlan}
           disabled={!editing || status === 'Saving…'}
-          className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 border border-indigo-700 px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
         >
           {status === 'Saving…' ? 'Saving…' : 'Save'}
         </button>
+        <div className="mt-2 text-center text-xs text-secondaryText">{status}</div>
       </div>
     </div>
   );
