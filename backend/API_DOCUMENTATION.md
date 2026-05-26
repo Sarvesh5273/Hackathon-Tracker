@@ -54,8 +54,15 @@ Extract hackathon details from a URL or provided text using Gemini AI.
 ```json
 {
   "name": "HackathonName 2024",
+  "registration_open_at": "2024-05-01T00:00:00Z",
   "registration_deadline": "2024-05-15T23:59:59Z",
+  "submission_open_at": "2024-05-20T00:00:00Z",
   "submission_deadline": "2024-06-01T23:59:59Z",
+  "phases": [
+    { "name": "Registration", "type": "registration", "start_at": "2024-05-01T00:00:00Z", "end_at": "2024-05-15T23:59:59Z" },
+    { "name": "Phase 1 Submission", "type": "submission", "start_at": "2024-05-20T00:00:00Z", "end_at": "2024-05-25T23:59:59Z" },
+    { "name": "Final Submission", "type": "submission", "start_at": null, "end_at": "2024-06-01T23:59:59Z" }
+  ],
   "location": "San Francisco, CA",
   "mode": "Hybrid",
   "description": "Join us for 48 hours of coding, innovation, and networking."
@@ -78,8 +85,14 @@ Create a new hackathon entry in your list.
 {
   "name": "HackathonName 2024",
   "url": "https://hackathon-website.com",
+  "registration_open_at": "2024-05-01T00:00:00Z",
   "registration_deadline": "2024-05-15T23:59:59Z",
+  "submission_open_at": "2024-05-20T00:00:00Z",
   "submission_deadline": "2024-06-01T23:59:59Z",
+  "phases": [
+    { "name": "Registration", "type": "registration", "start_at": "2024-05-01T00:00:00Z", "end_at": "2024-05-15T23:59:59Z" },
+    { "name": "Final Submission", "type": "submission", "start_at": null, "end_at": "2024-06-01T23:59:59Z" }
+  ],
   "location": "San Francisco, CA",
   "mode": "Hybrid",
   "description": "Join us for 48 hours of coding.",
@@ -90,8 +103,11 @@ Create a new hackathon entry in your list.
 **Parameters**:
 - `name` (string, required): Hackathon name
 - `url` (string, required): Hackathon website URL
+- `registration_open_at` (ISO string, optional): Registration opening date
 - `registration_deadline` (ISO string, optional): Registration deadline
+- `submission_open_at` (ISO string, optional): Submission opening date
 - `submission_deadline` (ISO string, optional): Submission deadline
+- `phases` (array, optional): Phase timeline objects (name/type/start_at/end_at)
 - `location` (string, required): Physical location or "Online"
 - `mode` (string, required): "Online", "Hybrid", or "Offline"
 - `description` (string, required): Short description (max 200 chars)
@@ -104,8 +120,14 @@ Create a new hackathon entry in your list.
   "user_id": "user-uuid",
   "name": "HackathonName 2024",
   "url": "https://hackathon-website.com",
+  "registration_open_at": "2024-05-01T00:00:00Z",
   "registration_deadline": "2024-05-15T23:59:59Z",
+  "submission_open_at": "2024-05-20T00:00:00Z",
   "submission_deadline": "2024-06-01T23:59:59Z",
+  "phases": [
+    { "name": "Registration", "type": "registration", "start_at": "2024-05-01T00:00:00Z", "end_at": "2024-05-15T23:59:59Z" },
+    { "name": "Final Submission", "type": "submission", "start_at": null, "end_at": "2024-06-01T23:59:59Z" }
+  ],
   "location": "San Francisco, CA",
   "mode": "Hybrid",
   "description": "Join us for 48 hours of coding.",
@@ -137,8 +159,14 @@ Retrieve all hackathons for the current user, ordered by submission deadline.
     "user_id": "user-uuid",
     "name": "HackathonName 2024",
     "url": "https://hackathon-website.com",
+    "registration_open_at": "2024-05-01T00:00:00Z",
     "registration_deadline": "2024-05-15T23:59:59Z",
+    "submission_open_at": "2024-05-20T00:00:00Z",
     "submission_deadline": "2024-06-01T23:59:59Z",
+    "phases": [
+      { "name": "Registration", "type": "registration", "start_at": "2024-05-01T00:00:00Z", "end_at": "2024-05-15T23:59:59Z" },
+      { "name": "Final Submission", "type": "submission", "start_at": null, "end_at": "2024-06-01T23:59:59Z" }
+    ],
     "location": "San Francisco, CA",
     "mode": "Hybrid",
     "description": "Join us for 48 hours of coding.",
@@ -353,4 +381,3 @@ Currently no rate limiting is implemented. This should be added in production.
 3. **Validate on the frontend** - Don't rely only on backend validation
 4. **Handle errors gracefully** - Always check response status codes
 5. **Cache extraction results** - Avoid re-extracting the same hackathon
-

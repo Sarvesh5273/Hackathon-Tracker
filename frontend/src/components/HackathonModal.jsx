@@ -7,6 +7,18 @@ try { window.__HAS_HACKATHON_MODAL = true; } catch (e) {}
 
 export default function HackathonModal({ hackathon, sessionToken, onClose, onSaved, onDelete }) {
   const [deleting, setDeleting] = useState(false);
+  const phases = Array.isArray(hackathon?.phases)
+    ? hackathon.phases.filter((p) => p && p.name)
+    : [];
+
+  const formatPhaseDate = (phase) => {
+    const start = formatDateShort(phase.start_at);
+    const end = formatDateShort(phase.end_at);
+    if (start && end) return `${start} → ${end}`;
+    if (end) return `Deadline: ${end}`;
+    if (start) return `Starts: ${start}`;
+    return '';
+  };
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete "${hackathon.name}"?`)) return;
@@ -112,6 +124,20 @@ export default function HackathonModal({ hackathon, sessionToken, onClose, onSav
                 )}
               </div>
             </div>
+
+            {phases.length > 0 && (
+              <div className="border-t border-white/10 pt-4">
+                <div className="text-xs uppercase tracking-wide text-secondaryText opacity-50 mb-3">Event Phases</div>
+                <div className="space-y-2 text-sm">
+                  {phases.map((phase, idx) => (
+                    <div key={`${phase.name}-${idx}`} className="flex items-center justify-between gap-4">
+                      <div className="font-medium">{phase.name}</div>
+                      <div className="text-secondaryText">{formatPhaseDate(phase)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Plan Editor */}
             <div className="border-t border-white/10 pt-4">

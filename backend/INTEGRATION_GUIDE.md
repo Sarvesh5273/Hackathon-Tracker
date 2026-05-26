@@ -178,8 +178,11 @@ async function extractAndSave(url, title) {
       body: JSON.stringify({
         name: extracted.name,
         url,
+        registration_open_at: extracted.registration_open_at,
         registration_deadline: extracted.registration_deadline,
+        submission_open_at: extracted.submission_open_at,
         submission_deadline: extracted.submission_deadline,
+        phases: extracted.phases,
         location: extracted.location,
         mode: extracted.mode,
         description: extracted.description,
@@ -433,4 +436,3 @@ curl -X GET http://localhost:8000/api/hackathons \
 ## 🎉 You're Ready!
 
 Your backend is now ready to integrate with frontend and extension. Start with the extract endpoint (no auth needed) to test connectivity, then add authentication and more complex operations.
-

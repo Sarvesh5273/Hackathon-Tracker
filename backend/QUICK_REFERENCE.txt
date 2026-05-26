@@ -127,8 +127,11 @@ PYDANTIC VALIDATION
 ✓ location: string (required)
 ✓ mode: string - must be Online|Hybrid|Offline
 ✓ description: string - max 200 characters
+✓ registration_open_at: ISO string or null
 ✓ registration_deadline: ISO string or null
+✓ submission_open_at: ISO string or null
 ✓ submission_deadline: ISO string or null
+✓ phases: array of phase objects or null
 ✓ status: string - must be interested|registered|completed|dropped
 ✓ project_idea: string (required for plans)
 ✓ tech_stack: string[] (required for plans)

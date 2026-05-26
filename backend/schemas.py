@@ -2,6 +2,14 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 
+class PhaseItem(BaseModel):
+    """Hackathon phase details"""
+    name: str
+    type: Optional[str] = None
+    start_at: Optional[str] = None
+    end_at: Optional[str] = None
+
+
 class ExtractResponse(BaseModel):
     """Response from Gemini extraction"""
     name: str
@@ -9,6 +17,7 @@ class ExtractResponse(BaseModel):
     registration_deadline: Optional[str] = None
     submission_open_at: Optional[str] = None
     submission_deadline: Optional[str] = None
+    phases: Optional[List[PhaseItem]] = None
     location: str
     mode: str
     description: str = ""
@@ -29,6 +38,7 @@ class HackathonCreate(BaseModel):
     registration_deadline: Optional[str] = None
     submission_open_at: Optional[str] = None
     submission_deadline: Optional[str] = None
+    phases: Optional[List[PhaseItem]] = None
     location: str
     mode: str
     description: str = ""
@@ -45,6 +55,7 @@ class HackathonResponse(BaseModel):
     registration_deadline: Optional[str] = None
     submission_open_at: Optional[str] = None
     submission_deadline: Optional[str] = None
+    phases: Optional[List[PhaseItem]] = None
     location: str
     mode: str
     description: str = ""

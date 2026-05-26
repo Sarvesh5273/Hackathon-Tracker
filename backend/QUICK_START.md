@@ -40,8 +40,11 @@ create table hackathons (
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   url text not null,
+  registration_open_at timestamp with time zone,
   registration_deadline timestamp with time zone,
+  submission_open_at timestamp with time zone,
   submission_deadline timestamp with time zone,
+  phases jsonb,
   location text not null,
   mode text not null check (mode in ('Online', 'Hybrid', 'Offline')),
   description text not null,
@@ -52,6 +55,7 @@ create table hackathons (
 );
 create index idx_hackathons_user on hackathons(user_id);
 create index idx_hackathons_deadline on hackathons(submission_deadline);
+create index idx_hackathons_phases on hackathons using GIN (phases);
 
 -- Plans table
 create table plans (
@@ -81,6 +85,8 @@ create table user_tokens (
 create index idx_user_tokens_token on user_tokens(token);
 create index idx_user_tokens_user on user_tokens(user_id);
 ```
+
+If you already created the table earlier, run `sql_add_hackathon_phases.sql` in Supabase SQL editor to add the new columns/indexes.
 
 ## 5. Run the Server
 
@@ -139,4 +145,3 @@ pip install -r requirements.txt
 **CORS errors in frontend**
 - Ensure frontend origin is in CORS allowed list
 - Check browser console for specific error
-

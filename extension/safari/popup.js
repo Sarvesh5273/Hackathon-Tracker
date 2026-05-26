@@ -9,6 +9,8 @@ const views = {
   manual: $('viewManual')
 };
 
+let latestExtractionCache = null;
+
 function showView(name) {
   Object.entries(views).forEach(([k, el]) => {
     el.classList.toggle('hidden', k !== name);
@@ -167,6 +169,7 @@ function fillManualForm(extraction) {
 
 async function renderFromLatestExtraction() {
   const { latestExtraction } = await storageGet(['latestExtraction']);
+  latestExtractionCache = latestExtraction || null;
 
   if (!latestExtraction) {
     showView('manual');
@@ -211,6 +214,7 @@ async function addHackathonFromForm({
   registration_deadline,
   submission_open_at,
   submission_deadline,
+  phases,
   location,
   mode
 }, msgEl) {
@@ -227,6 +231,7 @@ async function addHackathonFromForm({
     registration_deadline,
     submission_open_at,
     submission_deadline,
+    phases: Array.isArray(phases) ? phases : [],
     location,
     mode,
     description: '',
@@ -326,6 +331,7 @@ async function wireUI() {
         registration_deadline: dateInputToISO($('regDeadlineInput').value),
         submission_open_at: dateInputToISO($('subOpenInput').value),
         submission_deadline: dateInputToISO($('deadlineInput').value),
+        phases: latestExtractionCache?.extracted?.phases,
         location: $('locationInput').value.trim() || 'Online',
         mode: $('modeInput').value
       },

@@ -261,6 +261,129 @@ def _clean_json_text(text: str) -> str:
     return text.strip()
 
 
+PHASE_TYPES = {
+    "registration",
+    "team_formation",
+    "ideation",
+    "orientation",
+    "kickoff",
+    "workshop",
+    "mentoring",
+    "hacking",
+    "checkpoint",
+    "submission",
+    "demo",
+    "judging",
+    "results",
+    "other",
+}
+
+
+def _parse_iso(iso: Optional[str]) -> Optional[datetime]:
+    if not iso or not isinstance(iso, str):
+        return None
+    value = iso.strip()
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return datetime.fromisoformat(value)
+    except Exception:
+        return None
+
+
+def _normalize_phases(phases) -> list[dict]:
+    if not isinstance(phases, list):
+        return []
+
+    normalized: list[dict] = []
+    for item in phases:
+        if hasattr(item, "model_dump"):
+            item = item.model_dump()
+        elif hasattr(item, "dict"):
+            item = item.dict()
+
+        if not isinstance(item, dict):
+            continue
+
+        name = str(item.get("name") or item.get("label") or "").strip()
+        if not name:
+            continue
+
+        phase_type = str(item.get("type") or item.get("phase_type") or "").strip().lower()
+        if phase_type and phase_type not in PHASE_TYPES:
+            phase_type = "other"
+        if not phase_type:
+            phase_type = None
+
+        start_at = item.get("start_at") or item.get("starts_at")
+        end_at = item.get("end_at") or item.get("ends_at") or item.get("deadline_at")
+
+        start_at = start_at.strip() if isinstance(start_at, str) and start_at.strip() else None
+        end_at = end_at.strip() if isinstance(end_at, str) and end_at.strip() else None
+
+        normalized.append(
+            {
+                "name": name,
+                "type": phase_type,
+                "start_at": start_at,
+                "end_at": end_at,
+            }
+        )
+
+    return normalized
+
+
+def _derive_dates_from_phases(payload: dict, phases: list[dict]) -> None:
+    if not phases:
+        return
+
+    def is_registration(p: dict) -> bool:
+        t = (p.get("type") or "").lower()
+        name = (p.get("name") or "").lower()
+        return t == "registration" or "register" in name
+
+    def is_submission(p: dict) -> bool:
+        t = (p.get("type") or "").lower()
+        name = (p.get("name") or "").lower()
+        return t == "submission" or "submission" in name
+
+    def pick_date(match_fn, field, pick="min") -> Optional[str]:
+        candidates = []
+        for phase in phases:
+            if not match_fn(phase):
+                continue
+            iso = phase.get(field)
+            dt = _parse_iso(iso)
+            if dt:
+                candidates.append((dt, iso))
+        if not candidates:
+            return None
+        candidates.sort(key=lambda x: x[0])
+        return candidates[0][1] if pick == "min" else candidates[-1][1]
+
+    if not payload.get("registration_open_at"):
+        reg_open = pick_date(is_registration, "start_at", pick="min")
+        if reg_open:
+            payload["registration_open_at"] = reg_open
+
+    if not payload.get("registration_deadline"):
+        reg_close = pick_date(is_registration, "end_at", pick="max")
+        if reg_close:
+            payload["registration_deadline"] = reg_close
+
+    if not payload.get("submission_open_at"):
+        sub_open = pick_date(is_submission, "start_at", pick="min")
+        if sub_open:
+            payload["submission_open_at"] = sub_open
+
+    if not payload.get("submission_deadline"):
+        sub_close = pick_date(is_submission, "end_at", pick="max")
+        if sub_close:
+            payload["submission_deadline"] = sub_close
+
+
 async def extract_hackathon_details(text: str) -> ExtractResponse:
     try:
         prompt = """Extract hackathon details from the provided text and return ONLY a valid JSON object (no markdown, no extra text) with these fields:
@@ -270,19 +393,33 @@ async def extract_hackathon_details(text: str) -> ExtractResponse:
 - registration_deadline: ISO datetime string or null (last date to register)
 - submission_open_at: ISO datetime string or null (when project submission opens)
 - submission_deadline: ISO datetime string or null (final project submission cutoff)
+- phases: array of objects or [] (see schema below)
 - location: string (physical location or "Online")
 - mode: string ("Online", "Hybrid", or "Offline")
 - description: string (max 200 chars summary of the hackathon)
+
+Phases schema:
+Each phase is an object with:
+- name: string (e.g., "Registration", "Kickoff", "Phase 1 Submission", "Demo Day")
+- type: string or null from this list:
+  registration, team_formation, ideation, orientation, kickoff, workshop, mentoring,
+  hacking, checkpoint, submission, demo, judging, results, other
+- start_at: ISO datetime string or null
+- end_at: ISO datetime string or null (use as the deadline if only one date is given)
 
 Rules:
 - registration_open_at = when signup/registration OPENS (often the hackathon start date)
 - registration_deadline = the LAST date/time someone can register (often called "Register by")
 - submission_open_at = when participants can START submitting their project
 - submission_deadline = the FINAL cutoff to submit the project (most important field)
+- If there are multiple rounds/phases (e.g., Phase 1 idea deadline, Phase 2 prototype, Final submission), include each as a separate item in phases with clear names.
 - If a field is not clearly mentioned in the text, return null for it
 - Do NOT invent or guess dates — only extract what is explicitly stated
 - All dates must be in ISO 8601 format: YYYY-MM-DDTHH:MM:SS (use T00:00:00 if time is unknown)
 - If only one deadline is mentioned with no context, treat it as submission_deadline
+- For phases with a single date (deadline), set end_at and leave start_at null
+- Use [] for phases if no phase/round information is present
+- Keep phases in chronological order when possible
 
 Return only the JSON object, nothing else."""
 
@@ -291,7 +428,18 @@ Return only the JSON object, nothing else."""
 
         response_text = _clean_json_text(response.text)
         hackathon_data = json.loads(response_text)
-        hackathon_data["description"] = ""
+        phases = _normalize_phases(hackathon_data.get("phases"))
+        if phases:
+            hackathon_data["phases"] = phases
+            _derive_dates_from_phases(hackathon_data, phases)
+        else:
+            hackathon_data["phases"] = []
+
+        if "description" in hackathon_data:
+            desc = hackathon_data.get("description") or ""
+            hackathon_data["description"] = str(desc)[:200]
+        else:
+            hackathon_data["description"] = ""
 
         return ExtractResponse(**hackathon_data)
     except json.JSONDecodeError as e:
@@ -351,23 +499,30 @@ async def create_hackathon(
                     },
                 )
 
-        response = await (
-            supabase
-            .table("hackathons")
-            .insert({
-                "user_id": user_id,
-                "name": hackathon.name,
-                "url": hackathon.url,
-                "registration_open_at": hackathon.registration_open_at,
-                "registration_deadline": hackathon.registration_deadline,
-                "submission_open_at": hackathon.submission_open_at,
-                "submission_deadline": hackathon.submission_deadline,
-                "location": hackathon.location,
-                "mode": hackathon.mode,
-                "description": hackathon.description or "",
-                "status": hackathon.status,
-            })
-            .execute()
+phases = _normalize_phases(hackathon.phases)
+payload = {
+    "user_id": user_id,
+    "name": hackathon.name,
+    "url": hackathon.url,
+    "registration_open_at": hackathon.registration_open_at,
+    "registration_deadline": hackathon.registration_deadline,
+    "submission_open_at": hackathon.submission_open_at,
+    "submission_deadline": hackathon.submission_deadline,
+    "phases": phases or [],
+    "location": hackathon.location,
+    "mode": hackathon.mode,
+    "description": hackathon.description or "",
+    "status": hackathon.status,
+}
+
+if phases:
+    _derive_dates_from_phases(payload, phases)
+
+response = await (
+    supabase
+    .table("hackathons")
+    .insert(payload)
+    .execute()
 )
 
         if not response.data:
